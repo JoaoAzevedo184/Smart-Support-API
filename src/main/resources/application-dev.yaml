@@ -1,0 +1,21 @@
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    io.github.joaovictor.smartsupport: DEBUG
+    org.hibernate.SQL: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    enabled: true

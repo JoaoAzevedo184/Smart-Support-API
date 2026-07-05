@@ -1,3 +1,31 @@
 spring:
   application:
     name: smart-support-api
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/smartsupport}
+    username: ${DB_USERNAME:smartsupport}
+    password: ${DB_PASSWORD:smartsupport}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # schema é gerido pelo Flyway, não pelo Hibernate
+    open-in-view: false
+    properties:
+      hibernate.format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
