@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -11,25 +11,20 @@
 	<groupId>io.github.joaovictor</groupId>
 	<artifactId>smart-support-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>smart-support-api</name>
+	<description>REST API for intelligent support ticket management applying GoF Design Patterns with Spring Boot.</description>
+
 	<properties>
 		<java.version>21</java.version>
+		<!-- versões centralizadas para facilitar manutenção -->
+		<mapstruct.version>1.6.3</mapstruct.version>
+		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+		<datafaker.version>2.4.3</datafaker.version>
+		<springdoc.version>2.8.16</springdoc.version>
 	</properties>
+
 	<dependencies>
+		<!-- ===================== Starters Spring ===================== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -46,6 +41,8 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
+		<!-- ===================== Migrations (Flyway) ===================== -->
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
@@ -54,12 +51,29 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
+
+		<!-- ===================== OpenAPI / Swagger ===================== -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.8.16</version>
+			<version>${springdoc.version}</version>
 		</dependency>
 
+		<!-- ===================== MapStruct (DTOs) ===================== -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+
+		<!-- ===================== DataFaker (popular banco) ===================== -->
+		<dependency>
+			<groupId>net.datafaker</groupId>
+			<artifactId>datafaker</artifactId>
+			<version>${datafaker.version}</version>
+		</dependency>
+
+		<!-- ===================== Runtime ===================== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -71,14 +85,36 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- ===================== Lombok ===================== -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<!-- ===================== Testes ===================== -->
+		<!-- spring-boot-starter-test já traz JUnit 5, Mockito, AssertJ, etc. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Testcontainers: integração com Postgres real.
+		     A BOM do Spring Boot já gerencia a versão, então não declaramos <version>. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -108,16 +144,32 @@
 							<goal>compile</goal>
 						</goals>
 						<configuration>
+							<!-- A ORDEM importa: lombok -> binding -> mapstruct -->
 							<annotationProcessorPaths>
 								<path>
 									<groupId>org.projectlombok</groupId>
 									<artifactId>lombok</artifactId>
 								</path>
 								<path>
+									<groupId>org.projectlombok</groupId>
+									<artifactId>lombok-mapstruct-binding</artifactId>
+									<version>${lombok-mapstruct-binding.version}</version>
+								</path>
+								<path>
+									<groupId>org.mapstruct</groupId>
+									<artifactId>mapstruct-processor</artifactId>
+									<version>${mapstruct.version}</version>
+								</path>
+								<path>
 									<groupId>org.springframework.boot</groupId>
 									<artifactId>spring-boot-configuration-processor</artifactId>
 								</path>
 							</annotationProcessorPaths>
+							<compilerArgs>
+								<!-- nomes de parâmetro nos mappers (boa prática MapStruct) -->
+								<arg>-Amapstruct.defaultComponentModel=spring</arg>
+								<arg>-Amapstruct.unmappedTargetPolicy=IGNORE</arg>
+							</compilerArgs>
 						</configuration>
 					</execution>
 					<execution>
@@ -131,6 +183,16 @@
 								<path>
 									<groupId>org.projectlombok</groupId>
 									<artifactId>lombok</artifactId>
+								</path>
+								<path>
+									<groupId>org.projectlombok</groupId>
+									<artifactId>lombok-mapstruct-binding</artifactId>
+									<version>${lombok-mapstruct-binding.version}</version>
+								</path>
+								<path>
+									<groupId>org.mapstruct</groupId>
+									<artifactId>mapstruct-processor</artifactId>
+									<version>${mapstruct.version}</version>
 								</path>
 							</annotationProcessorPaths>
 						</configuration>
