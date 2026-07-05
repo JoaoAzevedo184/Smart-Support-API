@@ -1,5 +1,7 @@
 package io.github.joaovictor.smartsupport.facade;
 
+import io.github.joaovictor.smartsupport.chain.TicketProcessingChain;
+import io.github.joaovictor.smartsupport.chain.TicketProcessingContext;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketRequest;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketResponse;
 import io.github.joaovictor.smartsupport.entity.Client;
@@ -23,6 +25,7 @@ public class TicketFacade {
     private final TicketRepository ticketRepository;
     private final TicketFactoryProvider ticketFactoryProvider;
     private final TicketMapper ticketMapper;
+    private final TicketProcessingChain ticketProcessingChain;
 
     @Transactional
     public TicketResponse openTicket(TicketRequest request) {
@@ -37,6 +40,8 @@ public class TicketFacade {
                 client,
                 request.priority()
         );
+
+        ticketProcessingChain.process(new TicketProcessingContext(ticket, request));
 
         return ticketMapper.toResponse(ticketRepository.save(ticket));
     }
