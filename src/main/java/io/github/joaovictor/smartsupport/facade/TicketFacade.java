@@ -3,6 +3,7 @@ package io.github.joaovictor.smartsupport.facade;
 import io.github.joaovictor.smartsupport.chain.TicketProcessingChain;
 import io.github.joaovictor.smartsupport.chain.TicketProcessingContext;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketAssignRequest;
+import io.github.joaovictor.smartsupport.dto.ticket.TicketReportResponse;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketRequest;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketResponse;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketStatusUpdateRequest;
@@ -10,6 +11,8 @@ import io.github.joaovictor.smartsupport.entity.Client;
 import io.github.joaovictor.smartsupport.entity.SupportTeam;
 import io.github.joaovictor.smartsupport.entity.Ticket;
 import io.github.joaovictor.smartsupport.entity.User;
+import io.github.joaovictor.smartsupport.entity.enums.TicketCategory;
+import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import io.github.joaovictor.smartsupport.event.TicketAssignedEvent;
 import io.github.joaovictor.smartsupport.event.TicketStatusChangedEvent;
@@ -21,6 +24,9 @@ import io.github.joaovictor.smartsupport.repository.SupportTeamRepository;
 import io.github.joaovictor.smartsupport.repository.TicketRepository;
 import io.github.joaovictor.smartsupport.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -115,5 +121,32 @@ public class TicketFacade {
         eventPublisher.publishEvent(new TicketAssignedEvent(saved, team, user));
 
         return ticketMapper.toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TicketResponse> listOpenTickets() {
+        return ticketRepository.findByStatus(TicketStatus.OPEN).stream()
+                .map(ticketMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TicketReportResponse generateReport() {
+        Map<TicketStatus, Long> byStatus = new EnumMap<>(TicketStatus.class);
+        for (TicketStatus status : TicketStatus.values()) {
+            byStatus.put(status, ticketRepository.countByStatus(status));
+        }
+
+        Map<TicketCategory, Long> byCategory = new EnumMap<>(TicketCategory.class);
+        for (TicketCategory category : TicketCategory.values()) {
+            byCategory.put(category, ticketRepository.countByCategory(category));
+        }
+
+        Map<TicketPriority, Long> byPriority = new EnumMap<>(TicketPriority.class);
+        for (TicketPriority priority : TicketPriority.values()) {
+            byPriority.put(priority, ticketRepository.countByPriority(priority));
+        }
+
+        return new TicketReportResponse(ticketRepository.count(), byStatus, byCategory, byPriority);
     }
 }
