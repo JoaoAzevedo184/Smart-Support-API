@@ -36,31 +36,31 @@ O projeto é dividido em fases que vão do esqueleto à API completa com extens�
 
 ## Fase 4 — Pipeline do chamado
 
-- [ ] **Chain of Responsibility**: Validation → Spam → Category → Priority → AssignTeam
-- [ ] **Strategy** de prioridade (Urgent/High/Medium/Low)
-- [ ] **Template Method**: processadores por categoria (Bug/Billing/Support)
-- [ ] Integração do pipeline na Facade
+- [x] **Chain of Responsibility**: Validation → Spam → Category → Priority → AssignTeam
+- [x] **Strategy** de prioridade (Urgent/High/Medium/Low)
+- [x] **Template Method**: processadores por categoria (Bug/Billing/Support)
+- [x] Integração do pipeline na Facade
 
 ## Fase 5 — Status e notificações
 
-- [ ] Ciclo de vida de status + validação de transições
-- [ ] **Observer** (Spring Events): Email, Slack, Audit, Dashboard
-- [ ] **Adapter** para o sistema legado de notificação
-- [ ] `PUT /tickets/{id}/status` e `POST /tickets/{id}/assign`
+- [x] Ciclo de vida de status + validação de transições
+- [x] **Observer** (Spring Events): Email, Slack, Audit, Dashboard
+- [x] **Adapter** para o sistema legado de notificação
+- [x] `PUT /tickets/{id}/status` e `POST /tickets/{id}/assign`
 
 ## Fase 6 — Ações e relatórios
 
-- [ ] **Command**: Close, Reopen, Assign
-- [ ] `GET /tickets/open`
-- [ ] `GET /tickets/report` (agregações)
+- [x] **Command**: Close, Reopen, Assign
+- [x] `GET /tickets/open`
+- [x] `GET /tickets/report` (agregações)
 
 ## Fase 7 — Qualidade
 
-- [ ] Testes unitários (JUnit 5 + Mockito) por padrão/serviço
-- [ ] Testes de integração com **Testcontainers**
-- [ ] **DataFaker** para seed de demo
-- [ ] **GitHub Actions** (CI: build + testes)
-- [ ] `Dockerfile` da aplicação
+- [x] Testes unitários (JUnit 5 + Mockito) por padrão/serviço
+- [x] Testes de integração com **Testcontainers**
+- [x] **DataFaker** para seed de demo
+- [x] **GitHub Actions** (CI: build + testes)
+- [x] `Dockerfile` da aplicação
 
 ## Fase 8 — Extensão de IA
 
