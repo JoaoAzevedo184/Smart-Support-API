@@ -55,6 +55,8 @@ public interface PriorityStrategy {
 
 Implementações: `UrgentPriorityStrategy`, `HighPriorityStrategy`, `MediumPriorityStrategy`, `LowPriorityStrategy`. A estratégia certa é selecionada em runtime e injetada no handler de prioridade.
 
+**Segundo uso — canal de notificação.** O mesmo padrão resolve qual canal de notificação está ativo (webhook, log ou no-op). `NotificationChannelResolver` recebe todas as implementações de `NotificationChannelSender` via injeção de lista (Spring) e seleciona a ativa conforme `app.notifications.channel`, com fallback para `log` quando o valor é desconhecido.
+
 ---
 
 ## 4. Chain of Responsibility — `chain`
@@ -109,21 +111,25 @@ Status muda ──► notifica ──► EmailNotification
 
 ## 7. Adapter — `adapter`
 
-**Problema.** A empresa tem um sistema legado de notificação (`LegacyNotification`) cuja interface não bate com a `NotificationService` usada pela aplicação.
+**Problema.** A empresa tem um sistema legado de notificação (`LegacyNotificationSystem`) cuja assinatura de método não bate com a interface moderna `NotificationSender` usada pela aplicação.
 
 **Solução.** Um adaptador traduz uma interface na outra:
 
 ```java
-public class LegacyNotificationAdapter implements NotificationService {
-    private final LegacyNotification legacy;
+public class LegacyNotificationAdapter implements NotificationSender {
+    private final LegacyNotificationSystem legacyNotificationSystem;
     @Override
-    public void send(Notification n) {
-        legacy.dispatch(n.recipient(), n.title() + ": " + n.body());
+    public void notify(String recipient, String message) {
+        legacyNotificationSystem.dispatch(recipient, message, DEFAULT_SEVERITY_CODE);
     }
 }
 ```
 
-A aplicação programa contra `NotificationService` e ignora que, por trás, há um sistema antigo.
+A aplicação programa contra `NotificationSender` e ignora que, por trás, há um sistema antigo.
+
+**Segunda implementação — `WebhookNotificationAdapter`.** A mesma interface `NotificationSender` ganhou uma nova implementação que traduz a notificação em um `POST` HTTP com payload JSON (`evento`, `chamado`, `timestamp`) para uma URL configurável (`app.notifications.webhook-url`). Falhas de rede são absorvidas com retry simples, sem interromper o fluxo principal; na ausência de URL configurada, a notificação apenas é registrada em log.
+
+Como agora existem várias implementações de `NotificationSender` (legado, webhook, log, no-op), a escolha de qual está ativa em runtime é feita por uma **Strategy** (`NotificationChannelResolver`, ver seção 3), com base em `app.notifications.channel`. Isso evita `if/else` espalhado e mantém os consumidores (como os listeners de evento) desacoplados do canal escolhido.
 
 ---
 
