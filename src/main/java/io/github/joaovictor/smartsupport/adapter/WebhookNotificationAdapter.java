@@ -22,10 +22,12 @@ public class WebhookNotificationAdapter implements NotificationChannelSender {
 
     private static final String EVENT_TYPE = "ticket.notification";
 
+    // ===== Configuração (injetada por properties) =====
     private final RestClient restClient;
     private final String webhookUrl;
     private final int maxAttempts;
 
+    // ===== Construção (monta o RestClient com timeouts) =====
     public WebhookNotificationAdapter(
             RestClient.Builder restClientBuilder,
             @Value("${app.notifications.webhook-url:}") String webhookUrl,
@@ -44,6 +46,7 @@ public class WebhookNotificationAdapter implements NotificationChannelSender {
         return NotificationChannel.WEBHOOK;
     }
 
+    // ===== Envio (traduz para POST HTTP; sem URL, cai para log) =====
     @Override
     public void notify(String recipient, String message) {
         if (webhookUrl == null || webhookUrl.isBlank()) {
@@ -56,6 +59,7 @@ public class WebhookNotificationAdapter implements NotificationChannelSender {
         sendWithRetry(payload);
     }
 
+    // ===== Resiliência (retry simples; falha não interrompe o fluxo) =====
     private void sendWithRetry(WebhookPayload payload) {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {

@@ -4,6 +4,10 @@ import io.github.joaovictor.smartsupport.strategy.PriorityResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * 4º elo do pipeline: resolve a prioridade via {@link PriorityResolver} (Strategy),
+ * mas só quando ela não foi informada explicitamente no request.
+ */
 @Component
 @RequiredArgsConstructor
 public class PriorityHandler extends TicketChainHandler {

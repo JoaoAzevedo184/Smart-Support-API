@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/** Observer: publica no canal da equipe (simulado) a cada evento do chamado. */
 @Slf4j
 @Component
 public class SlackNotificationListener {

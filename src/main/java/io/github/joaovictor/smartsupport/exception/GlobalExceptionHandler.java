@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Tratamento centralizado de exceções: converte erros em respostas
+ * {@link ProblemDetail} (RFC 7807) padronizadas, com um {@code timestamp}.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // ===== Erros de negócio (status + motivo explícitos) =====
     @ExceptionHandler(ResponseStatusException.class)
     public ProblemDetail handleResponseStatus(ResponseStatusException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason());
@@ -21,6 +26,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    // ===== Erros de validação de DTO (@Valid) — inclui mapa de campos =====
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Um ou mais campos são inválidos");
@@ -36,6 +42,7 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    // ===== Rede de segurança (qualquer erro inesperado → 500) =====
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(

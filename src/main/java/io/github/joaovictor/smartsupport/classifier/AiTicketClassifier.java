@@ -28,6 +28,7 @@ public class AiTicketClassifier implements ModeAwareTicketClassifier {
             Descrição: %s
             """;
 
+    // ===== Colaboradores (LLM + fallback determinístico) =====
     private final ChatClient chatClient;
     private final RuleBasedClassifier fallback;
 
@@ -41,6 +42,7 @@ public class AiTicketClassifier implements ModeAwareTicketClassifier {
         return ClassifierMode.AI;
     }
 
+    // ===== Classificação (chama o LLM; em qualquer falha, cai para regras) =====
     @Override
     public TicketCategory classify(String title, String description) {
         try {
@@ -60,6 +62,7 @@ public class AiTicketClassifier implements ModeAwareTicketClassifier {
         return fallback.classify(title, description);
     }
 
+    // ===== Apoio (extrai a categoria do texto livre da resposta) =====
     private TicketCategory parseCategory(String response) {
         if (response == null || response.isBlank()) {
             return null;

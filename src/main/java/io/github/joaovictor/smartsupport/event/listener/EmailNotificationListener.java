@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/** Observer: notifica o cliente por e-mail a cada mudança de status/atribuição. */
 @Slf4j
 @Component
 public class EmailNotificationListener {

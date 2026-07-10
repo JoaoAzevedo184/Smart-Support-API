@@ -36,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
     private static final List<TicketPriority> PRIORITIES = List.of(TicketPriority.values());
     private static final List<TicketStatus> STATUSES = List.of(TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED);
 
+    // ===== Dependências =====
     private final ClientRepository clientRepository;
     private final SupportTeamRepository supportTeamRepository;
     private final UserRepository userRepository;
@@ -43,6 +44,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private final Faker faker = new Faker();
 
+    // ===== Seed (idempotente: só popula banco vazio) =====
     @Override
     @Transactional
     public void run(String... args) {

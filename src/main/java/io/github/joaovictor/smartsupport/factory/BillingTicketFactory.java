@@ -4,6 +4,7 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketCategory;
 import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import org.springframework.stereotype.Component;
 
+/** Fábrica de chamados de cobrança (prioridade-default {@code MEDIUM}). */
 @Component
 public class BillingTicketFactory extends TicketFactory {
 

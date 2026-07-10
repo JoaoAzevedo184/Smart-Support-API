@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/** Cliente que abre chamados. Identidade/igualdade por {@code id} (UUID). */
 @Entity
 @Table(name = "clients")
 @Getter
@@ -29,10 +30,12 @@ import lombok.ToString;
 @ToString
 public class Client {
 
+    // ===== Identidade =====
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // ===== Atributos =====
     @Column(nullable = false)
     private String name;
 
@@ -42,12 +45,14 @@ public class Client {
     @Column
     private String phone;
 
+    // ===== Auditoria =====
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ===== Callbacks JPA =====
     @PrePersist
      void onCreate() {
         LocalDateTime now = LocalDateTime.now();

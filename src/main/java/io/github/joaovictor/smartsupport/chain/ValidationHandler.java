@@ -5,6 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 1º elo do pipeline: valida tamanho mínimo de título e descrição.
+ * Falha aqui interrompe a cadeia com HTTP 400.
+ */
 @Component
 public class ValidationHandler extends TicketChainHandler {
 

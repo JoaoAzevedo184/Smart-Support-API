@@ -7,6 +7,11 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * 5º e último elo do pipeline: atribui a equipe responsável conforme a categoria
+ * do chamado (mapeamento categoria → nome da equipe). Se a equipe não existir
+ * no banco, o chamado segue sem atribuição.
+ */
 @Component
 @RequiredArgsConstructor
 public class AssignTeamHandler extends TicketChainHandler {

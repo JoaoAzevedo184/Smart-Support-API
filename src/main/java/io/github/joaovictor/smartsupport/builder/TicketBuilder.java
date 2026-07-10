@@ -9,14 +9,21 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import java.util.Objects;
 
+/**
+ * Builder da entidade {@link Ticket}: construção fluente para uma entidade com
+ * muitos atributos, evitando construtor telescópico. Valida os campos
+ * obrigatórios no {@link #build()} e aplica {@code OPEN} como status default.
+ */
 public class TicketBuilder {
 
     private final Ticket ticket = new Ticket();
 
+    // ===== Criação =====
     public static TicketBuilder newTicket() {
         return new TicketBuilder();
     }
 
+    // ===== Passos fluentes =====
     public TicketBuilder title(String title) {
         ticket.setTitle(title);
         return this;
@@ -57,6 +64,7 @@ public class TicketBuilder {
         return this;
     }
 
+    // ===== Finalização (valida obrigatórios e aplica defaults) =====
     public Ticket build() {
         Objects.requireNonNull(ticket.getTitle(), "title é obrigatório");
         Objects.requireNonNull(ticket.getDescription(), "description é obrigatória");

@@ -9,6 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Registro de fábricas indexado por {@link TicketCategory}. O Spring injeta todas
+ * as {@link TicketFactory} e este provider resolve a certa em runtime, sem
+ * {@code switch}/{@code if} — adicionar uma categoria é só criar a fábrica.
+ */
 @Component
 public class TicketFactoryProvider {
 

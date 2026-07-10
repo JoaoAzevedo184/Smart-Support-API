@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
+/** Dados de entrada para abrir um chamado (categoria e prioridade opcionais). */
 public record TicketRequest(
 
         @NotBlank

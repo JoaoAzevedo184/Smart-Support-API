@@ -6,6 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Processador de bugs: exige descrição detalhada o bastante para reprodução
+ * (sobrescreve o passo {@code validate} do template).
+ */
 @Component
 public class BugTicketProcessor extends CategoryProcessor {
 

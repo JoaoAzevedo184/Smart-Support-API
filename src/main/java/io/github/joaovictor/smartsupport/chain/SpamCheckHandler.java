@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 2º elo do pipeline: barra chamados com conteúdo suspeito de spam
+ * (palavras-chave e links). Falha aqui interrompe a cadeia com HTTP 400.
+ */
 @Component
 public class SpamCheckHandler extends TicketChainHandler {
 

@@ -6,10 +6,16 @@ import io.github.joaovictor.smartsupport.template.CategoryProcessorProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * 3º elo do pipeline: define a categoria e aplica o processamento por categoria
+ * (Template Method). Se o cliente não informou a categoria, delega a inferência
+ * ao {@link TicketClassifier} (regras ou IA — Strategy).
+ */
 @Component
 @RequiredArgsConstructor
 public class CategoryHandler extends TicketChainHandler {
 
+    // ===== Colaboradores =====
     private final CategoryProcessorProvider categoryProcessorProvider;
     private final TicketClassifier ticketClassifier;
 

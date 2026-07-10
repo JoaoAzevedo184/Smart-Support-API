@@ -24,6 +24,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Usuário do sistema (agente/gestor/admin), opcionalmente ligado a uma equipe.
+ * {@code password} é omitido do {@code toString} por segurança.
+ */
 @Entity
 @Table(name = "users")
 @Getter
@@ -35,10 +39,12 @@ import lombok.ToString;
 @ToString(exclude = "password")
 public class User {
 
+    // ===== Identidade =====
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // ===== Atributos =====
     @Column(nullable = false)
     private String name;
 
@@ -52,16 +58,19 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
+    // ===== Relacionamentos =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "support_team_id")
     private SupportTeam supportTeam;
 
+    // ===== Auditoria =====
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ===== Callbacks JPA =====
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();

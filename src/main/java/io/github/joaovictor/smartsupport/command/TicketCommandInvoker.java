@@ -4,6 +4,11 @@ import io.github.joaovictor.smartsupport.dto.ticket.TicketResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+/**
+ * Invoker do padrão Command: ponto único de execução das ações de chamado.
+ * Centralizar aqui permite instrumentar toda ação (log, e futuramente
+ * auditoria/enfileiramento/undo) sem que os handlers conheçam esses detalhes.
+ */
 @Slf4j
 @Component
 public class TicketCommandInvoker {

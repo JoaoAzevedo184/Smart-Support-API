@@ -6,8 +6,13 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import io.github.joaovictor.smartsupport.facade.TicketFacade;
 import java.util.UUID;
 
+/**
+ * Command concreto: reabre o chamado, delegando a transição de status
+ * ({@code -> REOPENED}) à {@link TicketFacade}.
+ */
 public class ReopenTicketCommand implements TicketCommand {
 
+    // ===== Alvo da ação =====
     private final TicketFacade ticketFacade;
     private final UUID ticketId;
 

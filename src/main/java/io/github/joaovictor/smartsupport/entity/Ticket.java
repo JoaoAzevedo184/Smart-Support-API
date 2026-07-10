@@ -26,6 +26,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Entidade central do domínio: um chamado de suporte e seu ciclo de vida.
+ * Identidade e igualdade por {@code id} (UUID); timestamps de auditoria
+ * preenchidos por callbacks JPA.
+ */
 @Entity
 @Table(name = "tickets")
 @Getter
@@ -37,10 +42,12 @@ import lombok.ToString;
 @ToString
 public class Ticket {
 
+    // ===== Identidade =====
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // ===== Atributos de domínio =====
     @Column(nullable = false)
     private String title;
 
@@ -59,6 +66,7 @@ public class Ticket {
     @Column(length = 20)
     private TicketCategory category;
 
+    // ===== Relacionamentos =====
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
@@ -71,6 +79,7 @@ public class Ticket {
     @JoinColumn(name = "assigned_user_id")
     private User assignedUser;
 
+    // ===== Auditoria =====
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -80,6 +89,7 @@ public class Ticket {
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
+    // ===== Callbacks JPA (timestamps + status default) =====
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();

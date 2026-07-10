@@ -5,8 +5,13 @@ import io.github.joaovictor.smartsupport.dto.ticket.TicketResponse;
 import io.github.joaovictor.smartsupport.facade.TicketFacade;
 import java.util.UUID;
 
+/**
+ * Command concreto: atribui equipe e/ou usuário ao chamado,
+ * delegando a operação à {@link TicketFacade}.
+ */
 public class AssignTicketCommand implements TicketCommand {
 
+    // ===== Alvo da ação =====
     private final TicketFacade ticketFacade;
     private final UUID ticketId;
     private final TicketAssignRequest request;

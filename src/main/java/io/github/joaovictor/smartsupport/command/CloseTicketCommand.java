@@ -6,8 +6,13 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import io.github.joaovictor.smartsupport.facade.TicketFacade;
 import java.util.UUID;
 
+/**
+ * Command concreto: fecha o chamado, delegando a transição de status
+ * ({@code -> CLOSED}) à {@link TicketFacade}.
+ */
 public class CloseTicketCommand implements TicketCommand {
 
+    // ===== Alvo da ação =====
     private final TicketFacade ticketFacade;
     private final UUID ticketId;
 

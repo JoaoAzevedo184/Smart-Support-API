@@ -13,13 +13,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Regra de negócio de equipes de suporte (CRUD). Garante unicidade de nome.
+ */
 @Service
 @RequiredArgsConstructor
 public class SupportTeamService {
 
+    // ===== Dependências =====
     private final SupportTeamRepository supportTeamRepository;
     private final SupportTeamMapper supportTeamMapper;
 
+    // ===== Operações de escrita =====
     @Transactional
     public SupportTeamResponse create(SupportTeamRequest request) {
         if (supportTeamRepository.existsByName(request.name())) {
@@ -29,6 +34,7 @@ public class SupportTeamService {
         return supportTeamMapper.toResponse(supportTeam);
     }
 
+    // ===== Consultas (somente leitura) =====
     @Transactional(readOnly = true)
     public List<SupportTeamResponse> findAll() {
         return supportTeamRepository.findAll().stream()
@@ -56,6 +62,7 @@ public class SupportTeamService {
         supportTeamRepository.delete(getSupportTeamOrThrow(id));
     }
 
+    // ===== Apoio =====
     private SupportTeam getSupportTeamOrThrow(UUID id) {
         return supportTeamRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe de suporte não encontrada"));

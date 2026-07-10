@@ -7,6 +7,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+/**
+ * Mapper MapStruct entre {@code User} e seus DTOs. A equipe é resolvida no
+ * service (por isso {@code supportTeam} é ignorado na entrada).
+ */
 @Mapper
 public interface UserMapper {
 

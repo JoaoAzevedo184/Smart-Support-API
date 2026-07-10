@@ -25,15 +25,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Endpoints REST de chamados. Delega a abertura e as consultas à
+ * {@link TicketFacade}, e as ações (atribuir/fechar/reabrir) ao
+ * {@link TicketCommandInvoker} (padrão Command).
+ */
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
 @Tag(name = "Tickets", description = "Abertura e gestão de chamados")
 public class TicketController {
 
+    // ===== Dependências =====
     private final TicketFacade ticketFacade;
     private final TicketCommandInvoker ticketCommandInvoker;
 
+    // ===== Abertura e ciclo de vida =====
     @PostMapping
     public ResponseEntity<TicketResponse> create(@Valid @RequestBody TicketRequest request) {
         TicketResponse response = ticketFacade.openTicket(request);
@@ -64,6 +71,7 @@ public class TicketController {
         return ResponseEntity.ok(ticketCommandInvoker.run(new ReopenTicketCommand(ticketFacade, id)));
     }
 
+    // ===== Consultas =====
     @GetMapping("/open")
     public ResponseEntity<List<TicketResponse>> listOpen() {
         return ResponseEntity.ok(ticketFacade.listOpenTickets());

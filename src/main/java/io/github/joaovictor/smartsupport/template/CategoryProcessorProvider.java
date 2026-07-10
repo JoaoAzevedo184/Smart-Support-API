@@ -9,6 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Registro de processadores indexado por {@link TicketCategory}. O Spring injeta
+ * todos os {@link CategoryProcessor} e este provider resolve o certo em runtime.
+ */
 @Component
 public class CategoryProcessorProvider {
 

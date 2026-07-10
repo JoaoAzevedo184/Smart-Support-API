@@ -4,6 +4,7 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
+/** Estratégia MEDIUM: palavras-chave de dúvida / problema recorrente. */
 @Component
 public class MediumPriorityStrategy extends KeywordPriorityStrategy {
 
