@@ -19,7 +19,7 @@ public record TicketRequest(
         @NotNull
         UUID clientId,
 
-        @NotNull
+        // opcional: quando omitida, o CategoryHandler classifica a partir do título/descrição
         TicketCategory category,
 
         TicketPriority priority

@@ -20,4 +20,8 @@ public class TicketProcessingContext {
     public boolean hasExplicitPriority() {
         return request.priority() != null;
     }
+
+    public boolean hasExplicitCategory() {
+        return request.category() != null;
+    }
 }

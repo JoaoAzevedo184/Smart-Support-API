@@ -53,7 +53,9 @@ public class TicketFacade {
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
 
-        TicketFactory factory = ticketFactoryProvider.getFactory(request.category());
+        // categoria explícita ou SUPPORT como base neutra até o CategoryHandler classificar o texto
+        TicketCategory initialCategory = request.category() != null ? request.category() : TicketCategory.SUPPORT;
+        TicketFactory factory = ticketFactoryProvider.getFactory(initialCategory);
 
         Ticket ticket = factory.createTicket(
                 request.title(),
