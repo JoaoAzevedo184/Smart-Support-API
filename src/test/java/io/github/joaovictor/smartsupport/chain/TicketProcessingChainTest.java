@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+import io.github.joaovictor.smartsupport.classifier.RuleBasedClassifier;
 import io.github.joaovictor.smartsupport.dto.ticket.TicketRequest;
 import io.github.joaovictor.smartsupport.entity.Client;
 import io.github.joaovictor.smartsupport.entity.SupportTeam;
@@ -41,7 +42,7 @@ class TicketProcessingChainTest {
         chain = new TicketProcessingChain(
                 new ValidationHandler(),
                 new SpamCheckHandler(),
-                new CategoryHandler(categoryProcessorProvider),
+                new CategoryHandler(categoryProcessorProvider, new RuleBasedClassifier()),
                 new PriorityHandler(priorityResolver),
                 new AssignTeamHandler(supportTeamRepository));
     }
@@ -63,6 +64,26 @@ class TicketProcessingChainTest {
         chain.process(new TicketProcessingContext(ticket, request));
 
         assertThat(ticket.getPriority()).isEqualTo(TicketPriority.URGENT);
+        assertThat(ticket.getAssignedTeam()).isEqualTo(bugTeam);
+    }
+
+    @Test
+    void deveClassificarCategoriaAutomaticamenteQuandoNaoInformada() {
+        SupportTeam bugTeam = SupportTeam.builder().name("Bug Team").build();
+        when(supportTeamRepository.findByName("Bug Team")).thenReturn(Optional.of(bugTeam));
+
+        Ticket ticket = Ticket.builder()
+                .title("Sistema apresentando erro grave")
+                .description("Ao tentar salvar o formulário, o sistema retorna uma exception")
+                .client(Client.builder().build())
+                .category(TicketCategory.SUPPORT) // placeholder até a classificação (ver TicketFacade)
+                .priority(TicketPriority.LOW)
+                .build();
+        TicketRequest request = new TicketRequest(ticket.getTitle(), ticket.getDescription(), null, null, null);
+
+        chain.process(new TicketProcessingContext(ticket, request));
+
+        assertThat(ticket.getCategory()).isEqualTo(TicketCategory.BUG);
         assertThat(ticket.getAssignedTeam()).isEqualTo(bugTeam);
     }
 
