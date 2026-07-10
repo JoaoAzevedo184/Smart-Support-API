@@ -1,0 +1,11 @@
+# Ativa o Gemini (Google GenAI) como provedor do AiTicketClassifier.
+# Uso: SPRING_PROFILES_ACTIVE=dev,gemini (ou --spring.profiles.active=dev,gemini)
+spring:
+  ai:
+    model:
+      chat: google-genai
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+        chat:
+          model: ${GEMINI_MODEL:gemini-2.5-flash}

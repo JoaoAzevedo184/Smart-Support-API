@@ -20,6 +20,18 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  # Ollama é o provedor padrão (roda local, sem custo/credenciais de terceiros).
+  # Para usar Gemini, ative o profile "gemini" (ver application-gemini.yaml).
+  ai:
+    model:
+      chat: ollama
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_MODEL:llama3.2}
+        options:
+          temperature: 0.0
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -36,3 +48,5 @@ app:
     webhook-url: ${NOTIFICATIONS_WEBHOOK_URL:}
     webhook-timeout-ms: ${NOTIFICATIONS_WEBHOOK_TIMEOUT_MS:2000}
     webhook-retry-attempts: ${NOTIFICATIONS_WEBHOOK_RETRY_ATTEMPTS:2}
+  classifier:
+    strategy: ${CLASSIFIER_STRATEGY:rules} # rules | ai
