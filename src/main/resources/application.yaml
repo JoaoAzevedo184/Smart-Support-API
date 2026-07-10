@@ -29,3 +29,10 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+app:
+  notifications:
+    channel: ${NOTIFICATIONS_CHANNEL:log} # webhook | log | noop
+    webhook-url: ${NOTIFICATIONS_WEBHOOK_URL:}
+    webhook-timeout-ms: ${NOTIFICATIONS_WEBHOOK_TIMEOUT_MS:2000}
+    webhook-retry-attempts: ${NOTIFICATIONS_WEBHOOK_RETRY_ATTEMPTS:2}
