@@ -6,17 +6,16 @@ Este é o documento central do projeto. Cada padrão abaixo traz: **o problema**
 
 ## 1. Factory Method — `factory`
 
-**Problema.** Existem vários tipos de chamado (bug, cobrança, solicitação de feature), e cada um nasce com defaults diferentes (categoria, prioridade inicial, processador). Espalhar `new Ticket(...)` com esses defaults pelo código duplica regra.
+**Problema.** Existem vários tipos de chamado (bug, cobrança, suporte), e cada um nasce com defaults diferentes (prioridade inicial, processador). Espalhar `new Ticket(...)` com esses defaults pelo código duplica regra.
 
-**Solução.** Uma fábrica concentra a criação:
+**Solução.** Uma fábrica por categoria concentra a criação. `TicketFactoryProvider` resolve a fábrica certa a partir da `TicketCategory`:
 
 ```java
-Ticket bug     = ticketFactory.create(TicketType.BUG, dto);
-Ticket billing = ticketFactory.create(TicketType.BILLING, dto);
-Ticket feature = ticketFactory.create(TicketType.FEATURE_REQUEST, dto);
+TicketFactory factory = ticketFactoryProvider.getFactory(TicketCategory.BUG);
+Ticket ticket = factory.createTicket(title, description, client, requestedPriority);
 ```
 
-Cada tipo conhece seus próprios defaults; o chamador só informa o tipo.
+Implementações: `BugTicketFactory` (default `HIGH`), `BillingTicketFactory`, `SupportTicketFactory` (default `LOW`). Cada tipo conhece seus próprios defaults; o chamador só informa a categoria.
 
 ---
 
@@ -30,14 +29,14 @@ Cada tipo conhece seus próprios defaults; o chamador só informa o tipo.
 Ticket ticket = Ticket.builder()
         .title("Erro ao gerar boleto")
         .description("...")
-        .category(Category.BILLING)
-        .priority(Priority.HIGH)
-        .status(Status.ABERTO)
+        .category(TicketCategory.BILLING)
+        .priority(TicketPriority.HIGH)
+        .status(TicketStatus.OPEN)
         .client(client)
         .build();
 ```
 
-> Pode ser o `@Builder` do Lombok ou um builder manual. Para o portfólio, vale documentar a escolha; um builder manual demonstra entendimento, o do Lombok demonstra pragmatismo.
+> O projeto usa o `@Builder` do Lombok na entidade `Ticket`, encapsulado por `TicketBuilder`/as fábricas — pragmatismo sem abrir mão de leitura fluente na construção.
 
 ---
 
@@ -56,6 +55,8 @@ public interface PriorityStrategy {
 Implementações: `UrgentPriorityStrategy`, `HighPriorityStrategy`, `MediumPriorityStrategy`, `LowPriorityStrategy`. A estratégia certa é selecionada em runtime e injetada no handler de prioridade.
 
 **Segundo uso — canal de notificação.** O mesmo padrão resolve qual canal de notificação está ativo (webhook, log ou no-op). `NotificationChannelResolver` recebe todas as implementações de `NotificationChannelSender` via injeção de lista (Spring) e seleciona a ativa conforme `app.notifications.channel`, com fallback para `log` quando o valor é desconhecido.
+
+**Terceiro uso — classificador de chamado.** `TicketClassifierResolver` (pacote `classifier`) aplica a mesma ideia para escolher entre `RuleBasedClassifier` (baseline por palavra-chave) e `AiTicketClassifier` (via LLM), conforme `app.classifier.strategy`, com fallback para regras quando o valor é desconhecido — ver seção 11.
 
 ---
 
@@ -84,28 +85,28 @@ Inserir uma etapa nova (ex.: deduplicação) é adicionar um elo — sem tocar n
 
 ---
 
-## 5. Observer — `observer`
+## 5. Observer — `event`
 
-**Problema.** Quando o status do chamado muda, várias coisas precisam reagir: enviar e-mail, postar no Slack, registrar auditoria, atualizar dashboard. Chamar tudo isso manualmente acopla o serviço de status a cada destino.
+**Problema.** Quando o status do chamado muda (ou ele é atribuído), várias coisas precisam reagir: enviar e-mail, postar no Slack, registrar auditoria, atualizar dashboard. Chamar tudo isso manualmente acopla a Facade a cada destino.
 
-**Solução.** O `Ticket` (subject) notifica observadores registrados:
+**Solução.** A `TicketFacade` publica um evento de domínio; os observadores reagem de forma independente:
 
 ```text
-Status muda ──► notifica ──► EmailNotification
-                          ├─► SlackNotification
-                          ├─► AuditLog
-                          └─► DashboardUpdater
+changeStatus ──► TicketStatusChangedEvent ──► EmailNotificationListener
+assign       ──► TicketAssignedEvent      ├─► SlackNotificationListener
+                                          ├─► AuditLogListener
+                                          └─► DashboardNotificationListener ──► NotificationSender (Adapter)
 ```
 
-> No Spring, a forma idiomática é usar **Spring Events** (`ApplicationEventPublisher` + `@EventListener`). Vale implementar o Observer "clássico" para demonstrar o padrão e mencionar que Spring Events é a versão de produção.
+> Implementado com **Spring Events** (`ApplicationEventPublisher` + `@EventListener`), a forma idiomática do framework — por isso o pacote se chama `event`. Os eventos são `TicketStatusChangedEvent` e `TicketAssignedEvent`; cada listener é um `@Component` desacoplado, e adicionar um novo canal é criar mais um listener, sem tocar na Facade.
 
 ---
 
 ## 6. Singleton — beans Spring
 
-**Problema.** Serviços como logger de auditoria, serviço de e-mail e gerenciador de notificações devem ter uma única instância compartilhada.
+**Problema.** Serviços como os resolvers (`PriorityResolver`, `NotificationChannelResolver`, `TicketClassifierResolver`), a Facade e os listeners devem ter uma única instância compartilhada.
 
-**Solução.** No Spring, o escopo padrão de um bean **já é singleton**. Marcar `AuditLogger`, `EmailService` e `NotificationManager` como `@Service`/`@Component` resolve sem implementação manual. Documentar isso mostra que você entende como o contêiner aplica o padrão por baixo.
+**Solução.** No Spring, o escopo padrão de um bean **já é singleton**. Marcar essas classes como `@Service`/`@Component` resolve sem implementação manual. Documentar isso mostra que você entende como o contêiner aplica o padrão por baixo.
 
 ---
 
@@ -140,16 +141,17 @@ Como agora existem várias implementações de `NotificationSender` (legado, web
 **Solução.** Uma fachada expõe um único ponto de entrada:
 
 ```java
-public TicketResponse createTicket(CreateTicketRequest req) {
-    Ticket ticket = factory.create(req.type(), req);
-    pipeline.process(ticket);     // Chain
-    Ticket saved = repository.save(ticket);
-    events.publishCreated(saved); // Observer
-    return mapper.toResponse(saved);
+public TicketResponse openTicket(TicketRequest request) {
+    Client client = clientRepository.findById(request.clientId())...;
+    TicketFactory factory = ticketFactoryProvider.getFactory(initialCategory);
+    Ticket ticket = factory.createTicket(...);          // Factory + Builder
+    ticketProcessingChain.process(                       // Chain (→ Strategy, Classifier)
+            new TicketProcessingContext(ticket, request));
+    return ticketMapper.toResponse(ticketRepository.save(ticket));
 }
 ```
 
-O controller chama `facade.createTicket(req)` e nada mais.
+O controller chama `ticketFacade.openTicket(request)` e nada mais. Mudanças de status/atribuição (que publicam os eventos de **Observer**) passam por métodos irmãos da mesma Facade (`changeStatus`, `assign`).
 
 ---
 
@@ -191,17 +193,38 @@ public interface TicketCommand {
 
 ---
 
+## 11. Extensão de IA — `classifier`
+
+**Problema.** Quando o cliente não informa a categoria do chamado, alguém precisa inferi-la a partir do texto. Uma implementação por regras (palavras-chave) é determinística e não tem custo, mas é limitada; um LLM generaliza melhor, mas é externo, mais lento e pode falhar. O pipeline (`CategoryHandler`) não deveria conhecer qual dos dois está por trás.
+
+**Solução.** Uma interface `TicketClassifier` já existente no pipeline ganha uma segunda implementação, sem alterar o `CategoryHandler`:
+
+```java
+public interface TicketClassifier {
+    TicketCategory classify(String title, String description);
+}
+```
+
+- `RuleBasedClassifier` — baseline por palavra-chave, sempre disponível.
+- `AiTicketClassifier` — programa contra `ChatClient` (Spring AI), não contra um provedor específico; se a IA falhar ou responder algo não reconhecido, delega para `RuleBasedClassifier`.
+
+O `CategoryHandler` só chama o classificador quando a categoria não foi informada explicitamente (mesma semântica do `hasExplicitPriority()` da Fase 4). Qual classificador está ativo — e, dentro do `AiTicketClassifier`, qual motor de IA responde (Ollama por padrão, Gemini via profile `application-gemini.yaml`) — é decidido pela **Strategy** `TicketClassifierResolver`/`spring.ai.model.chat`, não pelo `CategoryHandler`. Essa é a validação prática de OCP: a Fase 6 inteira coube sem tocar em `TicketProcessingChain`, `AssignTeamHandler` ou `PriorityHandler`.
+
+---
+
 ## Resumo
 
 | Padrão | Categoria GoF | Papel no projeto |
 | --- | --- | --- |
-| Factory Method | Criacional | Criar tipos de chamado |
+| Factory Method | Criacional | Criar chamados por categoria |
 | Builder | Criacional | Montar `Ticket` |
 | Singleton | Criacional | Serviços únicos (via Spring) |
-| Adapter | Estrutural | Integrar legado |
+| Adapter | Estrutural | Integrar sistema legado e webhook de notificação |
 | Facade | Estrutural | Orquestrar criação |
-| Strategy | Comportamental | Calcular prioridade |
+| Strategy | Comportamental | Prioridade, canal de notificação e modo de classificação |
 | Chain of Responsibility | Comportamental | Pipeline do chamado |
-| Observer | Comportamental | Reagir a mudança de status |
-| Template Method | Comportamental | Esqueleto de processamento |
-| Command | Comportamental | Ações do chamado |
+| Observer | Comportamental | Reagir a mudança de status/atribuição (Spring Events) |
+| Template Method | Comportamental | Esqueleto de processamento por categoria |
+| Command | Comportamental | Ações do chamado (fechar, reabrir, atribuir) |
+
+> A classificação por IA (seção 11) é uma **extensão** aplicada sobre Strategy + Adapter já existentes, não um 11º padrão GoF.

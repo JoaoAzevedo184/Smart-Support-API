@@ -5,6 +5,7 @@
 - **JDK 21** (`java -version` deve apontar para 21)
 - **Docker** e **Docker Compose**
 - Git
+- _(opcional)_ **Ollama** rodando localmente, apenas se for usar a classificação por IA
 
 ## Clonar
 
@@ -15,66 +16,30 @@ cd Smart-Support-API
 
 ## Banco de dados
 
-A aplicação usa PostgreSQL. O jeito mais simples é subir via Docker Compose.
-
-`docker-compose.yml` (sugestão):
-
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: smart-support-db
-    environment:
-      POSTGRES_DB: smartsupport
-      POSTGRES_USER: smartsupport
-      POSTGRES_PASSWORD: smartsupport
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-volumes:
-  pgdata:
-```
+A aplicação usa PostgreSQL 16. O `docker-compose.yml` já vem pronto e publica o Postgres na porta **5433** do host (para não colidir com um Postgres local na 5432):
 
 ```bash
 docker compose up -d postgres
 ```
 
+As credenciais padrão (`smartsupport` / `smartsupport` / db `smartsupport`) podem ser sobrescritas por variáveis de ambiente `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`.
+
 ## Configuração da aplicação
 
-O `application.yaml` atual só define o nome da aplicação. Para conectar ao banco e ativar Flyway/OpenAPI, ele precisa evoluir para algo como:
+O `application.yaml` já está totalmente configurado (datasource, JPA, Flyway, OpenAPI, Actuator, notificações e IA). Todos os valores sensíveis têm default e podem ser sobrescritos por variáveis de ambiente. Os principais:
 
-```yaml
-spring:
-  application:
-    name: smart-support-api
-  datasource:
-    url: jdbc:postgresql://localhost:5432/smartsupport
-    username: smartsupport
-    password: smartsupport
-  jpa:
-    hibernate:
-      ddl-auto: validate   # o schema é gerido pelo Flyway, não pelo Hibernate
-    open-in-view: false
-    properties:
-      hibernate.format_sql: true
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
+| Variável | Default | Para quê |
+| --- | --- | --- |
+| `DB_URL` | `jdbc:postgresql://localhost:5433/smartsupport` | conexão com o banco |
+| `DB_USERNAME` / `DB_PASSWORD` | `smartsupport` | credenciais do banco |
+| `SPRING_PROFILES_ACTIVE` | `dev` | profile ativo |
+| `NOTIFICATIONS_CHANNEL` | `log` | canal de notificação (`webhook` / `log` / `noop`) |
+| `NOTIFICATIONS_WEBHOOK_URL` | _(vazio)_ | URL de destino quando o canal é `webhook` |
+| `CLASSIFIER_STRATEGY` | `rules` | classificador de categoria (`rules` / `ai`) |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | servidor Ollama (quando `CLASSIFIER_STRATEGY=ai`) |
+| `OLLAMA_MODEL` | `llama3.2` | modelo Ollama a usar |
 
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-```
-
-> `ddl-auto: validate` é proposital: o Hibernate apenas confere se o schema bate com as entidades; quem cria/altera tabelas é o Flyway.
+> `ddl-auto: validate` é proposital: o Hibernate apenas confere se o schema bate com as entidades; quem cria/altera tabelas é o **Flyway**.
 
 ## Rodar
 
@@ -91,6 +56,8 @@ java -jar target/smart-support-api-0.0.1-SNAPSHOT.jar
 
 ## Verificar
 
+A API sobe em `http://localhost:8080`.
+
 | Recurso | URL |
 | --- | --- |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
@@ -99,46 +66,40 @@ java -jar target/smart-support-api-0.0.1-SNAPSHOT.jar
 
 Um `GET /actuator/health` retornando `{"status":"UP"}` confirma que app + banco estão de pé.
 
+## Classificação por IA (opcional)
+
+Por padrão a classificação usa regras (`CLASSIFIER_STRATEGY=rules`), sem nenhuma dependência externa. Para habilitar a IA:
+
+**Com Ollama (padrão de IA, local):**
+
+```bash
+# tenha o Ollama rodando e o modelo baixado, ex.: ollama pull llama3.2
+CLASSIFIER_STRATEGY=ai OLLAMA_MODEL=llama3.2 ./mvnw spring-boot:run
+```
+
+**Com Gemini (profile `gemini`):**
+
+```bash
+CLASSIFIER_STRATEGY=ai GEMINI_API_KEY=sua-chave \
+  ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,gemini
+```
+
+> Ativar o profile `gemini` sem `GEMINI_API_KEY` faz a aplicação falhar ao subir (validação fail-fast do Spring AI).
+
 ## Testes
 
 ```bash
 ./mvnw test
 ```
 
-## Dependências ainda a adicionar ao `pom.xml`
-
-O esqueleto atual já traz Web, JPA, Validation, Actuator, Flyway, PostgreSQL, Lombok e springdoc. Conforme o projeto avança, considere:
-
-```xml
-<!-- MapStruct: mapeamento entidade <-> DTO -->
-<dependency>
-    <groupId>org.mapstruct</groupId>
-    <artifactId>mapstruct</artifactId>
-    <version>1.6.3</version>
-</dependency>
-
-<!-- DataFaker: popular o banco para demo -->
-<dependency>
-    <groupId>net.datafaker</groupId>
-    <artifactId>datafaker</artifactId>
-    <version>2.4.3</version>
-</dependency>
-
-<!-- Testcontainers: testes de integração com Postgres real -->
-<dependency>
-    <groupId>org.testcontainers</groupId>
-    <artifactId>postgresql</artifactId>
-    <scope>test</scope>
-</dependency>
-```
-
-> Ao adicionar MapStruct junto com Lombok, inclua o `lombok-mapstruct-binding` no `annotationProcessorPaths` do compiler plugin, senão os mappers não geram corretamente.
+A suíte é hermética: os testes de integração sobem o PostgreSQL via **Testcontainers** e os testes de IA/webhook usam mocks — nenhuma infraestrutura externa é necessária. Ver [`testing.md`](testing.md).
 
 ## Problemas comuns
 
 | Sintoma | Causa provável |
 | --- | --- |
-| `password authentication failed` | credenciais do `application.yaml` ≠ do compose |
-| `relation "ticket" does not exist` | Flyway desabilitado ou migrations ausentes |
-| Mapper MapStruct retorna `null` | falta o `lombok-mapstruct-binding` no annotation processor |
-| `port 5432 already in use` | outro Postgres rodando localmente |
+| `password authentication failed` | credenciais das variáveis de ambiente ≠ do compose |
+| `relation "tickets" does not exist` | Flyway desabilitado ou migrations ausentes |
+| `port 5433 already in use` | outro serviço ocupando a porta do compose |
+| App falha ao subir com erro de "Google GenAI configuration" | profile `gemini` ativo sem `GEMINI_API_KEY` |
+| Classificação por IA sempre cai para regras | Ollama indisponível na `OLLAMA_BASE_URL` ou modelo não baixado |

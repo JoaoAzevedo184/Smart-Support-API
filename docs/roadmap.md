@@ -56,19 +56,21 @@ O projeto é dividido em fases que vão do esqueleto à API completa com extens�
 **Por que webhook e não Slack?**
 Um webhook genérico demonstra o mesmo padrão de desacoplamento (Adapter + Strategy) sem prender o projeto a uma API externa que exigiria token, workspace e configuração de terceiros. Qualquer consumidor — Slack, Discord, n8n, um endpoint próprio — pode receber a notificação apenas configurando a URL. Isso é mais próximo de como sistemas reais expõem integrações.
 
-## 🔮 Fase 6 — Extensão de IA para classificação
+## ✅ Fase 6 — Extensão de IA para classificação
 
-> Ponto de extensão preparado desde o início: classificar automaticamente a categoria e a prioridade do chamado a partir do texto, sem reescrever o pipeline.
+> Ponto de extensão preparado desde o início: classificar automaticamente a categoria do chamado a partir do texto, sem reescrever o pipeline. A prioridade já era inferida do texto desde a Fase 4 (Strategy por palavra-chave); esta fase estende o mesmo princípio para a categoria.
 
-- [ ] Interface `TicketClassifier` (contrato de classificação)
-- [ ] Implementação baseada em regras como baseline (`RuleBasedClassifier`)
-- [ ] Implementação com LLM (`AiTicketClassifier`) via Spring AI
-- [ ] **Strategy** para alternar entre classificador por regras e por IA
-- [ ] Injeção do classificador no elo `Category` da Chain of Responsibility
-- [ ] Fallback automático para regras quando a IA está indisponível
-- [ ] Testes com classificador mockado (sem chamar LLM real no CI)
+- [x] Interface `TicketClassifier` (contrato de classificação)
+- [x] Implementação baseada em regras como baseline (`RuleBasedClassifier`)
+- [x] Implementação com LLM (`AiTicketClassifier`) via Spring AI — Ollama por padrão, Gemini via profile
+- [x] **Strategy** para alternar entre classificador por regras e por IA (`TicketClassifierResolver`, `app.classifier.strategy`)
+- [x] Injeção do classificador no elo `Category` da Chain of Responsibility
+- [x] Fallback automático para regras quando a IA está indisponível ou responde algo não reconhecido
+- [x] Testes com classificador mockado (sem chamar LLM real no CI)
 
-**Design:** o classificador entra como mais uma implementação por trás de uma interface já existente no pipeline. Nenhum outro componente muda — é a validação prática de que os padrões aplicados nas fases anteriores realmente deixaram o sistema aberto para extensão (OCP).
+**Design:** o classificador entra como mais uma implementação por trás de uma interface já existente no pipeline. O `CategoryHandler` só classifica quando o cliente não informa a categoria explicitamente (mesma semântica de `hasExplicitPriority()` na Fase 4) — nenhum outro componente do pipeline muda, validação prática de que os padrões aplicados nas fases anteriores deixaram o sistema aberto para extensão (OCP).
+
+**Provedor de IA:** o projeto não acopla a um provedor específico — programa contra `ChatClient` do Spring AI. Por padrão usa **Ollama** (local, sem custo/credenciais), selecionável por `spring.ai.model.chat=ollama` e `spring.ai.ollama.chat.model`. O profile `gemini` (`application-gemini.yaml`) troca para **Google Gemini** via `spring.ai.model.chat=google-genai`, exigindo `GEMINI_API_KEY`. Isso é o padrão **Strategy** aplicado de novo, agora um nível abaixo do classificador: qual motor de IA responde ao `AiTicketClassifier`.
 
 ---
 
