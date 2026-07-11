@@ -35,10 +35,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Facade do subsistema de chamados: ponto único de entrada que orquestra
+ * Factory (criação por categoria), Chain of Responsibility (pipeline),
+ * persistência e Observer (eventos de status/atribuição). O controller
+ * fala só com esta fachada, sem conhecer os padrões por trás.
+ */
 @Component
 @RequiredArgsConstructor
 public class TicketFacade {
 
+    // ===== Dependências (repositórios, padrões e publicador de eventos) =====
     private final ClientRepository clientRepository;
     private final TicketRepository ticketRepository;
     private final SupportTeamRepository supportTeamRepository;
@@ -48,12 +55,15 @@ public class TicketFacade {
     private final TicketProcessingChain ticketProcessingChain;
     private final ApplicationEventPublisher eventPublisher;
 
+    // ===== Abertura de chamado (Factory + Chain) =====
     @Transactional
     public TicketResponse openTicket(TicketRequest request) {
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
 
-        TicketFactory factory = ticketFactoryProvider.getFactory(request.category());
+        // categoria explícita ou SUPPORT como base neutra até o CategoryHandler classificar o texto
+        TicketCategory initialCategory = request.category() != null ? request.category() : TicketCategory.SUPPORT;
+        TicketFactory factory = ticketFactoryProvider.getFactory(initialCategory);
 
         Ticket ticket = factory.createTicket(
                 request.title(),
@@ -67,6 +77,7 @@ public class TicketFacade {
         return ticketMapper.toResponse(ticketRepository.save(ticket));
     }
 
+    // ===== Mudança de status (valida transição + publica Observer) =====
     @Transactional
     public TicketResponse changeStatus(UUID id, TicketStatusUpdateRequest request) {
         Ticket ticket = ticketRepository.findById(id)
@@ -92,6 +103,7 @@ public class TicketFacade {
         return ticketMapper.toResponse(saved);
     }
 
+    // ===== Atribuição de equipe/usuário (publica Observer) =====
     @Transactional
     public TicketResponse assign(UUID id, TicketAssignRequest request) {
         if (request.teamId() == null && request.userId() == null) {
@@ -123,6 +135,7 @@ public class TicketFacade {
         return ticketMapper.toResponse(saved);
     }
 
+    // ===== Consultas (somente leitura) =====
     @Transactional(readOnly = true)
     public List<TicketResponse> listOpenTickets() {
         return ticketRepository.findByStatus(TicketStatus.OPEN).stream()

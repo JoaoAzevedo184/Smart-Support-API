@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Endpoints REST de equipes de suporte (CRUD). Valida o DTO e delega ao
+ * {@link SupportTeamService}.
+ */
 @RestController
 @RequestMapping("/api/support-teams")
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class SupportTeamController {
 
     private final SupportTeamService supportTeamService;
 
+    // ===== CRUD =====
     @PostMapping
     public ResponseEntity<SupportTeamResponse> create(@Valid @RequestBody SupportTeamRequest request) {
         SupportTeamResponse response = supportTeamService.create(request);

@@ -5,6 +5,10 @@ import io.github.joaovictor.smartsupport.entity.Ticket;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+/**
+ * Mapper MapStruct de {@code Ticket} para {@code TicketResponse}, achatando as
+ * associações (client/team/user) em id + nome.
+ */
 @Mapper
 public interface TicketMapper {
 

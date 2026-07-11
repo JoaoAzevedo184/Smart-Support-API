@@ -6,6 +6,7 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/** Representação de saída de um chamado (associações achatadas em id + nome). */
 public record TicketResponse(
         UUID id,
         String title,

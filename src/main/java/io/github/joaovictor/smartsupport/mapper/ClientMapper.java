@@ -6,6 +6,7 @@ import io.github.joaovictor.smartsupport.entity.Client;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 
+/** Mapper MapStruct entre {@code Client} e seus DTOs de request/response. */
 @Mapper
 public interface ClientMapper {
 

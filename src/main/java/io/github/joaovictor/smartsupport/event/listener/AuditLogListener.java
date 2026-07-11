@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/** Observer: registra em log de auditoria cada mudança de status/atribuição. */
 @Slf4j
 @Component
 public class AuditLogListener {

@@ -4,125 +4,124 @@ Base URL: `http://localhost:8080`
 
 Documentação interativa: **Swagger UI** em `/swagger-ui.html`.
 
-Todas as respostas são JSON. Datas em ISO-8601 (`2026-06-27T14:30:00Z`).
+Todas as respostas são JSON. Identificadores são **UUID**. Datas em ISO-8601.
 
 ---
 
-## Tickets
+## Tickets — `/api/tickets`
 
 ### Criar chamado
 
 ```http
-POST /tickets
+POST /api/tickets
 Content-Type: application/json
 ```
 
 ```json
 {
-  "type": "BUG",
   "title": "Erro ao gerar boleto",
   "description": "O boleto retorna 500 ao confirmar o pagamento.",
-  "clientId": 1
+  "clientId": "3f1c9d2e-5a7b-4c8d-9e0f-1a2b3c4d5e6f",
+  "category": "BILLING",
+  "priority": "HIGH"
 }
 ```
 
-`type` ∈ `BUG | BILLING | FEATURE_REQUEST | SUPPORT`. A categoria e a prioridade iniciais são derivadas pelo pipeline (Chain + Strategy).
+- `title`, `description` e `clientId` são obrigatórios.
+- `category` (`BUG | BILLING | SUPPORT`) é **opcional**: se omitida, o pipeline classifica automaticamente a partir do texto (regras ou IA — ver [`getting-started.md`](getting-started.md)).
+- `priority` (`LOW | MEDIUM | HIGH | URGENT`) é **opcional**: se omitida, é derivada pela Strategy de prioridade (palavras-chave no título/descrição).
 
 **201 Created**
 
 ```json
 {
-  "id": 42,
+  "id": "9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d",
   "title": "Erro ao gerar boleto",
-  "status": "ABERTO",
+  "description": "O boleto retorna 500 ao confirmar o pagamento.",
+  "status": "OPEN",
   "priority": "HIGH",
   "category": "BILLING",
-  "client": { "id": 1, "name": "ACME" },
-  "team": null,
-  "createdAt": "2026-06-27T14:30:00Z"
+  "clientId": "3f1c9d2e-5a7b-4c8d-9e0f-1a2b3c4d5e6f",
+  "clientName": "ACME",
+  "assignedTeamId": "…",
+  "assignedTeamName": "Billing Team",
+  "assignedUserId": null,
+  "assignedUserName": null,
+  "createdAt": "2026-06-27T14:30:00",
+  "updatedAt": "2026-06-27T14:30:00",
+  "closedAt": null
 }
 ```
-
----
-
-### Listar chamados
-
-```http
-GET /tickets
-```
-
-Suporta paginação Spring Data: `?page=0&size=20&sort=createdAt,desc`.
-
-**200 OK** — lista paginada de chamados.
-
----
-
-### Detalhar chamado
-
-```http
-GET /tickets/{id}
-```
-
-**200 OK** — o chamado. **404** se não existir.
 
 ---
 
 ### Atualizar status
 
 ```http
-PUT /tickets/{id}/status
+PUT /api/tickets/{id}/status
 Content-Type: application/json
 ```
 
 ```json
-{ "status": "EM_ANDAMENTO" }
+{ "status": "IN_PROGRESS" }
 ```
 
-A transição dispara os **Observers** (e-mail, Slack, auditoria, dashboard).
+A transição dispara os **Observers** (e-mail, Slack, auditoria, dashboard). Ao mudar para `CLOSED`, `closedAt` é preenchido.
 
-**200 OK** — chamado atualizado. **422** se a transição for inválida.
+**200 OK** — chamado atualizado. **409 Conflict** se a transição for inválida (ver matriz de transições em [`data-model.md`](data-model.md)).
 
 ---
 
-### Atribuir equipe
+### Atribuir equipe/usuário
 
 ```http
-POST /tickets/{id}/assign
+POST /api/tickets/{id}/assign
 Content-Type: application/json
 ```
 
 ```json
-{ "teamId": 3 }
+{ "teamId": "…", "userId": "…" }
 ```
 
-**200 OK** — chamado com a equipe atribuída.
+Informe ao menos um entre `teamId` e `userId`. **200 OK** com o chamado atualizado; **400** se ambos forem nulos; **404** se time/usuário não existir.
+
+---
+
+### Fechar / Reabrir
+
+```http
+POST /api/tickets/{id}/close
+POST /api/tickets/{id}/reopen
+```
+
+Atalhos de ação implementados via **Command**. Aplicam a transição de status correspondente (`CLOSED` / `REOPENED`) e disparam os Observers. **200 OK**, ou **409** se a transição não for permitida a partir do status atual.
 
 ---
 
 ### Chamados abertos
 
 ```http
-GET /tickets/open
+GET /api/tickets/open
 ```
 
-Atalho para `status != FINALIZADO`. **200 OK**.
+Retorna os chamados com status `OPEN`. **200 OK** — lista de chamados.
 
 ---
 
 ### Relatório
 
 ```http
-GET /tickets/report
+GET /api/tickets/report
 ```
 
 **200 OK**
 
 ```json
 {
-  "total": 128,
-  "byStatus":   { "ABERTO": 30, "EM_ANALISE": 18, "EM_ANDAMENTO": 22, "FINALIZADO": 58 },
-  "byPriority": { "URGENT": 8, "HIGH": 40, "MEDIUM": 55, "LOW": 25 },
-  "byCategory": { "BUG": 50, "BILLING": 30, "FEATURE_REQUEST": 28, "SUPPORT": 20 }
+  "totalTickets": 128,
+  "byStatus":   { "OPEN": 30, "IN_PROGRESS": 22, "RESOLVED": 18, "CLOSED": 55, "REOPENED": 3 },
+  "byCategory": { "BUG": 60, "BILLING": 40, "SUPPORT": 28 },
+  "byPriority": { "LOW": 25, "MEDIUM": 55, "HIGH": 40, "URGENT": 8 }
 }
 ```
 
@@ -130,34 +129,35 @@ GET /tickets/report
 
 ## Cadastros auxiliares
 
-Endpoints CRUD padrão para os agregados de apoio:
+Endpoints CRUD padrão (`POST`, `GET` lista, `GET /{id}`, `PUT /{id}`, `DELETE /{id}`):
 
-| Recurso | Endpoints |
+| Recurso | Base |
 | --- | --- |
-| Clientes | `POST /clients`, `GET /clients`, `GET /clients/{id}` |
-| Usuários | `POST /users`, `GET /users`, `GET /users/{id}` |
-| Equipes | `POST /teams`, `GET /teams`, `GET /teams/{id}` |
+| Clientes | `/api/clients` |
+| Usuários | `/api/users` |
+| Equipes | `/api/support-teams` |
 
 ---
 
 ## Tratamento de erros
 
-Respostas de erro seguem um corpo padronizado (`@RestControllerAdvice`):
+As respostas de erro seguem o formato **RFC 7807 / `ProblemDetail`** (`@RestControllerAdvice`), com um `timestamp` adicional:
 
 ```json
 {
-  "timestamp": "2026-06-27T14:30:00Z",
+  "type": "about:blank",
+  "title": "Bad Request",
   "status": 404,
-  "error": "Not Found",
-  "message": "Ticket 42 não encontrado",
-  "path": "/tickets/42"
+  "detail": "Chamado não encontrado",
+  "timestamp": "2026-06-27T14:30:00Z"
 }
 ```
 
+Erros de validação (`@Valid`) incluem ainda um mapa `errors` campo → mensagem.
+
 | Código | Quando |
 | --- | --- |
-| `400` | corpo/validação inválida (`@Valid`) |
+| `400` | corpo/validação inválida (`@Valid`) ou regra de negócio (ex.: atribuição sem time/usuário) |
 | `404` | recurso inexistente |
-| `409` | conflito (ex.: e-mail duplicado) |
-| `422` | transição de status inválida |
+| `409` | transição de status inválida |
 | `500` | erro inesperado |

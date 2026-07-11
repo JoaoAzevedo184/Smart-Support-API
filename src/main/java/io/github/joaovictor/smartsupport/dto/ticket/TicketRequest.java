@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
+/** Dados de entrada para abrir um chamado (categoria e prioridade opcionais). */
 public record TicketRequest(
 
         @NotBlank
@@ -19,7 +20,7 @@ public record TicketRequest(
         @NotNull
         UUID clientId,
 
-        @NotNull
+        // opcional: quando omitida, o CategoryHandler classifica a partir do título/descrição
         TicketCategory category,
 
         TicketPriority priority

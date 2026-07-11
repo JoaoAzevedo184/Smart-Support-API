@@ -7,6 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+/** Mapper MapStruct entre {@code SupportTeam} e seus DTOs. */
 @Mapper
 public interface SupportTeamMapper {
 

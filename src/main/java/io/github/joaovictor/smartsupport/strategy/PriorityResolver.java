@@ -6,6 +6,12 @@ import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
+/**
+ * Contexto do padrão Strategy para prioridade: recebe todas as
+ * {@link PriorityStrategy} (injeção de lista), ordena da mais severa para a
+ * menos, e eleva a prioridade do chamado ao maior nível cujo {@code matches}
+ * for verdadeiro — nunca rebaixando abaixo do valor já atribuído.
+ */
 @Component
 public class PriorityResolver {
 

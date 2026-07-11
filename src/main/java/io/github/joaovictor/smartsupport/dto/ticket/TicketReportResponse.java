@@ -5,6 +5,7 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import io.github.joaovictor.smartsupport.entity.enums.TicketStatus;
 import java.util.Map;
 
+/** Relatório agregado de chamados: total e contagens por status/categoria/prioridade. */
 public record TicketReportResponse(
         long totalTickets,
         Map<TicketStatus, Long> byStatus,

@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Endpoints REST de clientes (CRUD). Camada fina: valida o DTO de entrada
+ * ({@code @Valid}) e delega ao {@link ClientService}; nunca expõe entidades JPA.
+ */
 @RestController
 @RequestMapping("/api/clients")
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class ClientController {
 
     private final ClientService clientService;
 
+    // ===== CRUD =====
     @PostMapping
     public ResponseEntity<ClientResponse> create(@Valid @RequestBody ClientRequest request) {
         ClientResponse response = clientService.create(request);

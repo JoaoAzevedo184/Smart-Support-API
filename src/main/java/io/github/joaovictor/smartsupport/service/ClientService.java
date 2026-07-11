@@ -13,13 +13,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Regra de negócio de clientes (CRUD). Bean singleton gerenciado pelo Spring;
+ * garante unicidade de e-mail e traduz entidade ↔ DTO via {@link ClientMapper}.
+ */
 @Service
 @RequiredArgsConstructor
 public class ClientService {
 
+    // ===== Dependências =====
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
 
+    // ===== Operações de escrita =====
     @Transactional
     public ClientResponse create(ClientRequest request) {
         if (clientRepository.existsByEmail(request.email())) {
@@ -29,6 +35,7 @@ public class ClientService {
         return clientMapper.toResponse(client);
     }
 
+    // ===== Consultas (somente leitura) =====
     @Transactional(readOnly = true)
     public List<ClientResponse> findAll() {
         return clientRepository.findAll().stream()
@@ -56,6 +63,7 @@ public class ClientService {
         clientRepository.delete(getClientOrThrow(id));
     }
 
+    // ===== Apoio =====
     private Client getClientOrThrow(UUID id) {
         return clientRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));

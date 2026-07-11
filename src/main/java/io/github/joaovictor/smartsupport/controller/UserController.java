@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Endpoints REST de usuários (CRUD). Valida o DTO e delega ao {@link UserService}.
+ */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class UserController {
 
     private final UserService userService;
 
+    // ===== CRUD =====
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest request) {
         UserResponse response = userService.create(request);

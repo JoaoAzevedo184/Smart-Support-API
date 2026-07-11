@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
+/** Dados de entrada para criar/atualizar um usuário. */
 public record UserRequest(
 
         @NotBlank

@@ -15,14 +15,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Regra de negócio de usuários (CRUD). Garante unicidade de e-mail e resolve
+ * a equipe de suporte associada (opcional) ao criar/atualizar.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
+    // ===== Dependências =====
     private final UserRepository userRepository;
     private final SupportTeamRepository supportTeamRepository;
     private final UserMapper userMapper;
 
+    // ===== Operações de escrita =====
     @Transactional
     public UserResponse create(UserRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -33,6 +39,7 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    // ===== Consultas (somente leitura) =====
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return userRepository.findAll().stream()
@@ -61,6 +68,7 @@ public class UserService {
         userRepository.delete(getUserOrThrow(id));
     }
 
+    // ===== Apoio =====
     private User getUserOrThrow(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));

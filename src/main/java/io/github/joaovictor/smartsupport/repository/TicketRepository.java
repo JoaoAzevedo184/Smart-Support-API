@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+/**
+ * Repositório Spring Data de {@link Ticket}: consultas por status/cliente/equipe
+ * e contagens usadas no relatório agregado. Queries derivadas do nome do método.
+ */
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
 
     List<Ticket> findByStatus(TicketStatus status);

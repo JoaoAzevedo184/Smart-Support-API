@@ -4,6 +4,7 @@ import io.github.joaovictor.smartsupport.entity.enums.TicketPriority;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
+/** Estratégia URGENT: palavras-chave de produção parada / criticidade máxima. */
 @Component
 public class UrgentPriorityStrategy extends KeywordPriorityStrategy {
 
